@@ -29,7 +29,7 @@
 #include "FullSystem/Residuals.h"
 #include "OptimizationBackend/AccumulatedSCHessian.h"
 #include "OptimizationBackend/AccumulatedTopHessian.h"
-
+#include <Eigen/SVD>
 
 
 namespace dso

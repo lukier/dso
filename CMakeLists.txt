@@ -1,122 +1,70 @@
-SET(PROJECT_NAME DSO)
+cmake_minimum_required(VERSION 3.1)
 
-PROJECT(${PROJECT_NAME})
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+project(DSO)
+set(${PROJECT_NAME}_VERSION 1.0.0)
 
+#--------------------------
+# Build configuration
+#--------------------------
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release)
+endif() 
 
-set(BUILD_TYPE Release)
-#set(BUILD_TYPE RelWithDebInfo)
+set(CMAKE_CXX_STANDARD 11) 
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_definitions(-DCOMPILEDWITHC11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native -mtune=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -mtune=native")
+add_compile_options(-Wall -Wextra -pedantic -Wno-unused-parameter -Wno-unused-variable)
 
-set(EXECUTABLE_OUTPUT_PATH bin)
-set(LIBRARY_OUTPUT_PATH lib)
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+#--------------------------
+# Where to find modules
+#--------------------------
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-
+#--------------------------
 # required libraries
+#--------------------------
 find_package(SuiteParse REQUIRED)
+find_package(Boost COMPONENTS system thread REQUIRED) 
 find_package(Eigen3 REQUIRED)
-find_package(Boost COMPONENTS system thread) 
+find_package(Sophus REQUIRED)
 
-# optional libraries
-find_package(LibZip QUIET)
-find_package(Pangolin 0.2 QUIET)
-find_package(OpenCV QUIET)
-
-
-
-# flags
-add_definitions("-DENABLE_SSE")
-set(CMAKE_CXX_FLAGS
-#   "${SSE_FLAGS} -O3 -g -std=c++0x -fno-omit-frame-pointer -march=native"
-   "${SSE_FLAGS} -O3 -g -std=c++0x -fno-omit-frame-pointer"
-)
-
+#--------------------------
 # Sources files
+#--------------------------
+include_directories(src) 
+
 set(dso_SOURCE_FILES
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/FullSystem.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/FullSystemOptimize.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/FullSystemOptPoint.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/FullSystemDebugStuff.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/FullSystemMarginalize.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/Residuals.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/CoarseTracker.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/CoarseInitializer.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/ImmaturePoint.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/HessianBlocks.cpp
-  ${PROJECT_SOURCE_DIR}/src/FullSystem/PixelSelector2.cpp
-  ${PROJECT_SOURCE_DIR}/src/OptimizationBackend/EnergyFunctional.cpp
-  ${PROJECT_SOURCE_DIR}/src/OptimizationBackend/AccumulatedTopHessian.cpp
-  ${PROJECT_SOURCE_DIR}/src/OptimizationBackend/AccumulatedSCHessian.cpp
-  ${PROJECT_SOURCE_DIR}/src/OptimizationBackend/EnergyFunctionalStructs.cpp
-  ${PROJECT_SOURCE_DIR}/src/util/settings.cpp
-  ${PROJECT_SOURCE_DIR}/src/util/Undistort.cpp
-  ${PROJECT_SOURCE_DIR}/src/util/globalCalib.cpp
+src/FullSystem/FullSystem.cpp
+src/FullSystem/FullSystemOptimize.cpp
+src/FullSystem/FullSystemOptPoint.cpp
+src/FullSystem/FullSystemDebugStuff.cpp
+src/FullSystem/FullSystemMarginalize.cpp
+src/FullSystem/Residuals.cpp
+src/FullSystem/CoarseTracker.cpp
+src/FullSystem/CoarseInitializer.cpp
+src/FullSystem/ImmaturePoint.cpp
+src/FullSystem/HessianBlocks.cpp
+src/FullSystem/PixelSelector2.cpp
+src/OptimizationBackend/EnergyFunctional.cpp
+src/OptimizationBackend/AccumulatedTopHessian.cpp
+src/OptimizationBackend/AccumulatedSCHessian.cpp
+src/OptimizationBackend/EnergyFunctionalStructs.cpp
+src/util/settings.cpp
+src/util/Undistort.cpp
+src/util/globalCalib.cpp
 )
 
-
-
-include_directories(
-  ${PROJECT_SOURCE_DIR}/src
-  ${PROJECT_SOURCE_DIR}/thirdparty/Sophus
-  ${EIGEN3_INCLUDE_DIR}
-) 
-
-
-# decide if we have pangolin
-if (Pangolin_FOUND)
-	message("--- found PANGOLIN, compiling dso_pangolin library.")
-	include_directories( ${Pangolin_INCLUDE_DIRS} ) 
-	set(dso_pangolin_SOURCE_FILES 
-	  ${PROJECT_SOURCE_DIR}/src/IOWrapper/Pangolin/KeyFrameDisplay.cpp
-	  ${PROJECT_SOURCE_DIR}/src/IOWrapper/Pangolin/PangolinDSOViewer.cpp)
-	set(HAS_PANGOLIN 1)
-else ()
-	message("--- could not find PANGOLIN, not compiling dso_pangolin library.")
-	message("    this means there will be no 3D display / GUI available for dso_dataset.")
-	set(dso_pangolin_SOURCE_FILES )
-	set(HAS_PANGOLIN 0)
-endif ()
-
-# decide if we have openCV
-if (OpenCV_FOUND)
-	message("--- found OpenCV, compiling dso_opencv library.")
-	include_directories( ${OpenCV_INCLUDE_DIRS} )
-	set(dso_opencv_SOURCE_FILES 
-	  ${PROJECT_SOURCE_DIR}/src/IOWrapper/OpenCV/ImageDisplay_OpenCV.cpp
-	  ${PROJECT_SOURCE_DIR}/src/IOWrapper/OpenCV/ImageRW_OpenCV.cpp)
-	set(HAS_OPENCV 1)
-else ()
-	message("--- could not find OpenCV, not compiling dso_opencv library.")
-	message("    this means there will be no image display, and image read / load functionality.")
-	set(dso_opencv_SOURCE_FILES 
-	  ${PROJECT_SOURCE_DIR}/src/IOWrapper/ImageDisplay_dummy.cpp
-	  ${PROJECT_SOURCE_DIR}/src/IOWrapper/ImageRW_dummy.cpp)
-	set(HAS_OPENCV 0)
-endif ()
-
-# decide if we have ziplib.
-if (LIBZIP_LIBRARY)
-	message("--- found ziplib (${LIBZIP_VERSION}), compiling with zip capability.")
-	add_definitions(-DHAS_ZIPLIB=1)
-	include_directories( ${LIBZIP_INCLUDE_DIR_ZIP} ${LIBZIP_INCLUDE_DIR_ZIPCONF} ) 
-else()
-	message("--- not found ziplib (${LIBZIP_LIBRARY}), compiling without zip capability.")
-	set(LIBZIP_LIBRARY "")
-endif()
-
-
+#--------------------------
 # compile main library.
-include_directories( ${CSPARSE_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR}) 
-add_library(dso ${dso_SOURCE_FILES} ${dso_opencv_SOURCE_FILES} ${dso_pangolin_SOURCE_FILES})
-
-
-# build main executable (only if we have both OpenCV and Pangolin)
-if (OpenCV_FOUND AND Pangolin_FOUND)
-	message("--- compiling dso_dataset.")
-	add_executable(dso_dataset ${PROJECT_SOURCE_DIR}/src/main_dso_pangolin.cpp )
-	target_link_libraries(dso_dataset dso boost_system boost_thread csparse cxsparse ${LIBZIP_LIBRARY} ${Pangolin_LIBRARIES} ${OpenCV_LIBS})
-else()
-	message("--- not building dso_dataset, since either don't have openCV or Pangolin.")
-endif()
-
+#--------------------------
+add_library(${PROJECT_NAME} SHARED ${dso_SOURCE_FILES})
+target_include_directories(${PROJECT_NAME} PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>
+    $<INSTALL_INTERFACE:>
+    PRIVATE src)
+    
+target_include_directories(${PROJECT_NAME} PUBLIC ${EIGEN3_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Sophus_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${CSPARSE_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR})

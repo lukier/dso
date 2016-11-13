@@ -36,6 +36,7 @@
 #include "OptimizationBackend/EnergyFunctionalStructs.h"
 #include "IOWrapper/ImageRW.h"
 #include <algorithm>
+#include <Eigen/Dense>
 
 namespace dso
 {

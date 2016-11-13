@@ -51,7 +51,7 @@ class EnergyFunctional;
 class EFResidual
 {
 public:
-	EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
 	inline EFResidual(PointFrameResidual* org, EFPoint* point_, EFFrame* host_, EFFrame* target_) :
 		data(org), point(point_), host(host_), target(target_)

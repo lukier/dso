@@ -29,6 +29,7 @@
 #include "util/NumType.h"
 #include "util/MinimalImage.h"
 #include "map"
+#include <vector>
 
 namespace cv {
 	class Mat;

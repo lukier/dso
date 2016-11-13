@@ -36,6 +36,7 @@
 #include "FullSystem/PixelSelector.h"
 #include "FullSystem/PixelSelector2.h"
 #include "util/nanoflann.h"
+#include <Eigen/Dense>
 
 
 namespace dso
